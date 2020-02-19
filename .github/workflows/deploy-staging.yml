@@ -6,6 +6,42 @@ on:
 
 jobs:
    build:
-     runs-on: ubuntu-latest
+    
      if: contains(github.event.pull_request.labels.*.name, 'stage')
+     runs-on: ubuntu-latest
   
+     steps:
+       - uses: actions/checkout@v1
+       - name: npm install and build
+         run: |
+           npm install
+           npm build
+       - name: Upload artifact
+         uses: actions/upload-artifact@v1.0.0
+         with:
+    # Artifact name
+           name: artifact
+    # Directory containing files to upload
+           path: public/            
+            
+   deploy:
+     name: deploy to AWS
+     needs: [build]
+     runs-on: [ubuntu-latest]
+     
+     steps:
+       - uses: actions/checkout@v1
+       - name: Download artifact
+         uses: actions/download-artifact@v1.0.0
+         with:
+    # Artifact name
+           name: artifact
+    # Destination path
+           path: public
+     
+
+       - name: Deploy to AWS
+         uses: github/deploy-nodejs@master
+         env:
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}                
